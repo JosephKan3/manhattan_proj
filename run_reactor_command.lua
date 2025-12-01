@@ -19,7 +19,7 @@ end
 
 -- Extract method and optional argument
 local methodName = args[1]
-local methodArg = args[2]
+local methodArgs = {select(2, table.unpack(args))}
 
 -- Resolve argument type
 local function parseArg(v)
@@ -31,12 +31,13 @@ local function parseArg(v)
     return v
 end
 
-local parsedArg = parseArg(methodArg)
-
+for i = 1, #methodArgs do
+    methodArgs[i] = parseArg(methodArgs[i])
+end
 -- Execute method
 local ok, result
-if parsedArg ~= nil then
-    ok, result = pcall(reactor[methodName], parsedArg)
+if #methodArgs > 0 then
+    ok, result = pcall(reactor[methodName], table.unpack(methodArgs))
 else
     ok, result = pcall(reactor[methodName])
 end
@@ -47,7 +48,24 @@ if not ok then
 else
     term.write("Method '" .. methodName .. "' executed successfully")
     if result ~= nil then
-        term.write(" → " .. tostring(result))
+        if type(result) == "table" then
+            term.write(" → ")
+            -- Recursively print table contents
+            local function printTable(t, indent)
+                indent = indent or ""
+                for k, v in pairs(t) do
+                    if type(v) == "table" then
+                        term.write("\n" .. indent .. tostring(k) .. ": ")
+                        printTable(v, indent .. "  ")
+                    else
+                        term.write("\n" .. indent .. tostring(k) .. ": " .. tostring(v))
+                    end
+                end
+            end
+            printTable(result, "  ")
+        else
+            term.write(" → " .. tostring(result))
+        end
     end
     term.write("\n")
 end
