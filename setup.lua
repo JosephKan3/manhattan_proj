@@ -20,9 +20,94 @@ local function getFileList(repository, branchName)
 end
 
 -- Delete all files from current directory to update them
-print("Clearing existing files...")
+print("\nClearing existing files...")
 shell.execute("rm -r *")
 print("Fetching files from repository...")
+
+local files = getFileList(repo, branch)
+
+for _, file in ipairs(files) do
+    if file.type == "file" and file.name:match("%.lua$") then
+        shell.execute(string.format(
+            "wget -f https://raw.githubusercontent.com/%s/%s/%s",
+            repo,
+            branch,
+            file.path
+        ))
+    end
+end
+
+
+-- Configure hardware addresses
+local function setupConfig()
+    print("\n=== Hardware Configuration ===")
+    print("Please provide the hardware addresses for your system.")
+    
+    io.write("\nEnter TRANSPOSER address: ")
+    local transposerAddr = io.read()
+    
+    io.write("Enter POWER_BUTTON address: ")
+    local powerButtonAddr = io.read()
+    
+    -- Write transposer address
+    local transposerFile = io.open("transposer_address.txt", "w")
+    if transposerFile then
+        transposerFile:write(transposerAddr)
+        transposerFile:close()
+    else
+        print("ERROR: Could not write transposer_address.txt")
+        return false
+    end
+    
+    -- Write power button address
+    local powerButtonFile = io.open("power_button_address.txt", "w")
+    if powerButtonFile then
+        powerButtonFile:write(powerButtonAddr)
+        powerButtonFile:close()
+    else
+        print("ERROR: Could not write power_button_address.txt")
+        return false
+    end
+    
+    print("\nConfiguration saved.")
+    return true
+end
+
+-- Check if config already exists
+local transposerFile = io.open("transposer_address.txt", "r")
+if transposerFile then
+    transposerFile:close()
+    io.write("\nConfig files already exist. Reconfigure? (y/n): ")
+    local response = io.read()
+    if response:lower() == "y" then
+        setupConfig()
+    end
+else
+    setupConfig()
+end
+
+-- Copy az5 to lib/az5.lua
+shell.execute("cp az5.lua lib/az5.lua")
+
+-- Add /home/orchestrate.lua to /home/.shrc to run on startup
+local shrcPath = "/home/.shrc"
+local shrcFile = io.open(shrcPath, "a")
+if shrcFile then
+    for line in io.lines(shrcPath) do
+        if line:match("orchestrate.lua") then
+            shrcFile:close()
+            print("Setup complete.")
+            return
+        end
+    end
+    shrcFile:write("\n/home/orchestrate.lua\n")
+    shrcFile:close()
+else
+    shrcFile = io.open(shrcPath, "w")
+    shrcFile:write("/home/orchestrate.lua\n")
+    shrcFile:close()
+end
+print("Setup complete.")
 
 local files = getFileList(repo, branch)
 

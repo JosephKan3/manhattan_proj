@@ -4,7 +4,18 @@ component = require("component")
 shell = require("shell")
 local computer = require('computer')
 
-reactor_chamber_signal = component.proxy(component.get("56ec984d-8790-41f2-8305-d1014789c889"))
+local powerButtonFile = io.open("power_button_address.txt", "r")
+if not powerButtonFile then
+  error("power_button_address.txt not found. Please run setup.lua first.")
+end
+local powerButtonAddress = powerButtonFile:read("*a"):match("^%s*(.-)%s*$")
+powerButtonFile:close()
+
+if not powerButtonAddress or powerButtonAddress == '' then
+  error("POWER_BUTTON address not configured. Please run setup.lua first.")
+end
+
+reactor_chamber_signal = component.proxy(component.get(powerButtonAddress))
 
 for side = 0, 5 do
   reactor_chamber_signal.setOutput(side, 0)

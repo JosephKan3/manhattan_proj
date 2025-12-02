@@ -7,6 +7,27 @@ local sides = require('sides')
 --- @alias What { name: string, isDamaged: fun(stack):boolean }
 
 --region SETUP
+local transposerFile = io.open("transposer_address.txt", "r")
+if not transposerFile then
+  error("transposer_address.txt not found. Please run setup.lua first.")
+end
+local transposerAddr = transposerFile:read("*a"):match("^%s*(.-)%s*$")
+transposerFile:close()
+
+local powerButtonFile = io.open("power_button_address.txt", "r")
+if not powerButtonFile then
+  error("power_button_address.txt not found. Please run setup.lua first.")
+end
+local powerButtonAddr = powerButtonFile:read("*a"):match("^%s*(.-)%s*$")
+powerButtonFile:close()
+
+if not transposerAddr or transposerAddr == '' then
+  error("TRANSPOSER address not configured. Please run setup.lua first.")
+end
+if not powerButtonAddr or powerButtonAddr == '' then
+  error("POWER_BUTTON address not configured. Please run setup.lua first.")
+end
+
 local SIDES = {
   INPUT                    = sides.west,
   OUTPUT                   = sides.east,
@@ -14,8 +35,8 @@ local SIDES = {
   NUCLEAR_REACTOR_POWER_BUTTON = sides.bottom,
 }
 local ADDRESSES = {
-  TRANSPOSER = 'e589e3a5-a8fb-4895-ad80-ed19c7f9a78e',
-  POWER_BUTTON   = '56ec984d-8790-41f2-8305-d1014789c889'
+  TRANSPOSER = transposerAddr,
+  POWER_BUTTON   = powerButtonAddr
 }
 --- coolant cell
 --- @type What
