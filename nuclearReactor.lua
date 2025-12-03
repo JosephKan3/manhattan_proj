@@ -38,10 +38,15 @@ local ADDRESSES = {
   TRANSPOSER = transposerAddr,
   POWER_BUTTON   = powerButtonAddr
 }
+local coolant_name = 'gregtech:gt.360k_Helium_Coolantcell'
+local fuel_name = 'gregtech:gt.rodUranium4'
+local fuel_depleted_name = 'gregtech:gt.depletedRodUranium4'
+
+
 --- coolant cell
 --- @type What
 local C = {
-  name      = 'gregtech:gt.360k_Helium_Coolantcell',
+  name      = coolant_name,
   isDamaged = function(stack)
     return stack.maxDamage - 5 <= stack.damage
   end
@@ -49,8 +54,12 @@ local C = {
 --- fuel rod
 --- @type What
 local F = {
-  name      = 'gregtech:gt.rodUranium4',
+  name      = fuel_name,
   isDamaged = function(stack)
+    -- Consider depleted rods as damaged
+    if stack.name == fuel_depleted_name then
+      return true
+    end
     return stack.damage == stack.maxDamage
   end
 }
@@ -104,9 +113,17 @@ function reactor:initializationCheck()
         print("ERROR: Slot " .. slot .. " is empty but should contain " .. preset.name)
         return false
       end
-      if stack.name ~= preset.name then
-        print("ERROR: Slot " .. slot .. " contains " .. stack.name .. " but should contain " .. preset.name)
-        return false
+      -- For fuel rods, accept both normal and depleted
+      if preset == F then
+        if stack.name ~= fuel_name and stack.name ~= fuel_depleted_name then
+          print("ERROR: Slot " .. slot .. " contains " .. stack.name .. " but should contain " .. F.name .. " or " .. F.depleted_name)
+          return false
+        end
+      else
+        if stack.name ~= preset.name then
+          print("ERROR: Slot " .. slot .. " contains " .. stack.name .. " but should contain " .. preset.name)
+          return false
+        end
       end
     end
   end
