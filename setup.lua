@@ -48,7 +48,11 @@ local function setupConfig()
     
     io.write("Enter POWER_BUTTON address: ")
     local powerButtonAddr = io.read()
-    
+
+    io.write("Enter POWER_REQUEST address (optional, press Enter to skip): ")
+    local powerRequestAddr = io.read()
+    if powerRequestAddr == "" then powerRequestAddr = nil end
+
     -- Write transposer address
     local transposerFile = io.open("transposer_address.txt", "w")
     if transposerFile then
@@ -67,6 +71,18 @@ local function setupConfig()
     else
         print("ERROR: Could not write power_button_address.txt")
         return false
+    end
+
+    -- Write optional power request address
+    if powerRequestAddr then
+        local powerRequestFile = io.open("power_request_address.txt", "w")
+        if powerRequestFile then
+            powerRequestFile:write(powerRequestAddr)
+            powerRequestFile:close()
+        else
+            print("ERROR: Could not write power_request_address.txt")
+            return false
+        end
     end
     
     print("\nConfiguration saved.")

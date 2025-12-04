@@ -7,41 +7,51 @@ local sides = require('sides')
 --- @alias What { name: string, isDamaged: fun(stack):boolean }
 
 --region SETUP
-local transposerFile = io.open("transposer_address.txt", "r")
-if not transposerFile then
+local function readAddress(path)
+  local f = io.open(path, "r")
+  if not f then
+    return nil
+  end
+  local raw = f:read("*a")
+  f:close()
+  if not raw then
+    return nil
+  end
+  local cleaned = raw:match("^%s*(.-)%s*$")
+  if cleaned == "" then
+    return nil
+  end
+  return cleaned
+end
+
+local transposerAddr = readAddress("transposer_address.txt")
+if not transposerAddr then
   error("transposer_address.txt not found. Please run setup.lua first.")
 end
-local transposerAddr = transposerFile:read("*a"):match("^%s*(.-)%s*$")
-transposerFile:close()
 
-local powerButtonFile = io.open("power_button_address.txt", "r")
-if not powerButtonFile then
+local powerButtonAddr = readAddress("power_button_address.txt")
+if not powerButtonAddr then
   error("power_button_address.txt not found. Please run setup.lua first.")
 end
-local powerButtonAddr = powerButtonFile:read("*a"):match("^%s*(.-)%s*$")
-powerButtonFile:close()
 
-if not transposerAddr or transposerAddr == '' then
-  error("TRANSPOSER address not configured. Please run setup.lua first.")
-end
-if not powerButtonAddr or powerButtonAddr == '' then
-  error("POWER_BUTTON address not configured. Please run setup.lua first.")
-end
+-- Optional power request
+local powerRequestAddr = readAddress("power_request_address.txt")
 
 local SIDES = {
-  INPUT                    = sides.west,
-  OUTPUT                   = sides.east,
-  NUCLEAR_REACTOR          = sides.bottom,
-  NUCLEAR_REACTOR_POWER_BUTTON = sides.bottom,
+  INPUT                         = sides.south,
+  OUTPUT                        = sides.north,
+  NUCLEAR_REACTOR               = sides.top,
+  NUCLEAR_REACTOR_POWER_BUTTON  = sides.top,
 }
 local ADDRESSES = {
-  TRANSPOSER = transposerAddr,
-  POWER_BUTTON   = powerButtonAddr
+  TRANSPOSER     = transposerAddr,
+  POWER_BUTTON   = powerButtonAddr,
+  POWER_REQUEST  = powerRequestAddr
 }
-local coolant_name = 'gregtech:gt.360k_Helium_Coolantcell'
-local fuel_name = 'gregtech:gt.rodUranium4'
-local fuel_depleted_name = 'gregtech:gt.depletedRodUranium4'
 
+local coolant_name        = 'gregtech:gt.360k_Helium_Coolantcell'
+local fuel_name           = 'gregtech:gt.rodUranium4'
+local fuel_depleted_name  = 'gregtech:gt.depletedRodUranium4'
 
 --- coolant cell
 --- @type What
@@ -84,6 +94,15 @@ local LAYOUT = {
 
 local nuclearPowerButton = component.proxy(component.get(ADDRESSES.POWER_BUTTON))
 local transposer = component.proxy(component.get(ADDRESSES.TRANSPOSER))
+
+-- Optional proxy
+local power_request = nil
+if ADDRESSES.POWER_REQUEST then
+  local addr = component.get(ADDRESSES.POWER_REQUEST)
+  if addr then
+    power_request = component.proxy(addr)
+  end
+end
 
 local reactor = {
   started         = false,
@@ -217,7 +236,34 @@ function reactor:ensure()
   self:load()
 end
 
+-- Skip if power_request unavailable
+function reactor:wait_for_power_request()
+  if not power_request then
+    return
+  end
+
+  while true do
+    local inputs = power_request.getInput()
+    local triggered = false
+
+    for i = 0, #inputs - 1 do
+      if inputs[i] == 15 then
+        triggered = true
+        break
+      end
+    end
+
+    if triggered then
+      break
+    end
+    self:stop()
+
+    os.sleep(1)
+  end
+end
+
 function reactor:loop()
+  self:wait_for_power_request()
   self:ensure()
   if not self.started then
     self:start()
