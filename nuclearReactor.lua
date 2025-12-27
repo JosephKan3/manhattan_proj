@@ -189,6 +189,7 @@ function reactor:findInput(what)
 end
 
 function reactor:discharge()
+  -- local t_start = os.clock()
   for _, slot in ipairs(self.damagedSlots) do
     while transposer.getSlotStackSize(SIDES.NUCLEAR_REACTOR, slot) ~= 0 do
       -- output is blocked, waiting
@@ -198,6 +199,8 @@ function reactor:discharge()
       end
     end
   end
+  -- local t_end = os.clock()
+  -- print(string.format("[TIME] Discharge took %.3f seconds", t_end - t_start))
 end
 
 function reactor:load()
@@ -227,14 +230,28 @@ function reactor:ensure()
   end
 
   self:stop()
-  os.sleep(1)
+
+  -- -- Time logging start
+  -- local t1 = os.clock()
+
+  -- local inventory_data = transposer.getAllStacks(SIDES.NUCLEAR_REACTOR)
 
   for slot = 1, self.inventorySize do
-    local stack = transposer.getStackInSlot(SIDES.NUCLEAR_REACTOR, slot)
+    local stack = inventory_data[slot]
     if stack and LAYOUT[slot].isDamaged(stack) then
       table.insert(self.damagedSlots, slot)
     end
   end
+  -- for slot = 1, self.inventorySize do
+
+  --   local stack = transposer.getStackInSlot(SIDES.NUCLEAR_REACTOR, slot)
+  --   if stack and LAYOUT[slot].isDamaged(stack) then
+  --     table.insert(self.damagedSlots, slot)
+  --   end
+  -- end
+
+  local t2 = os.clock()
+  -- print(string.format("[TIME] Time between stop() and discharge(): %.3f seconds", t2 - t1))
 
   self:discharge()
   self:load()
@@ -282,7 +299,7 @@ function reactor:run()
     print("[RUN] FATAL: Initialization failed!")
     for _ = 1, 3 do
       computer.beep('.')
-      os.sleep(1)
+      os.sleep(0.25)
     end
     return
   end
