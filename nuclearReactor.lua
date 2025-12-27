@@ -250,7 +250,7 @@ function reactor:wait_for_power_request()
     local inputs = power_request.getInput()
     local triggered = false
 
-    for i = 0, #inputs - 1 do
+    for i = 0, #inputs do
       if inputs[i] == 15 then
         triggered = true
         break
