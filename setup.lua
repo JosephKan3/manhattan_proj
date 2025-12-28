@@ -5,7 +5,7 @@ local json = require('json')
 
 local args = {...}
 local branch = args[1] or 'main'
-local repo = args[2] or 'jsidle1/manhattan_proj'
+local repo = args[2] or 'JosephKan3/manhattan_proj'
 
 local function getFileList(repository, branchName)
     local url = string.format("https://api.github.com/repos/%s/contents/?ref=%s", repository, branchName)

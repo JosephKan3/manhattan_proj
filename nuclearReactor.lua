@@ -69,6 +69,7 @@ local C = {
 --- @type What
 local F = {
   name      = fuel_name,
+  depleted_name = fuel_depleted_name,
   isDamaged = function(stack)
     -- Consider depleted rods as damaged
     if stack.name == fuel_depleted_name then
@@ -235,7 +236,7 @@ function reactor:ensure()
   -- -- Time logging start
   -- local t1 = os.clock()
 
-  -- local inventory_data = transposer.getAllStacks(SIDES.NUCLEAR_REACTOR)
+  local inventory_data = transposer.getAllStacks(SIDES.NUCLEAR_REACTOR)
 
   for slot = 1, self.inventorySize do
     local stack = inventory_data[slot]
@@ -251,7 +252,7 @@ function reactor:ensure()
   --   end
   -- end
 
-  local t2 = os.clock()
+  -- local t2 = os.clock()
   -- print(string.format("[TIME] Time between stop() and discharge(): %.3f seconds", t2 - t1))
 
   self:discharge()
