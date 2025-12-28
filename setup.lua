@@ -43,42 +43,48 @@ local function setupConfig()
     print("\n=== Hardware Configuration ===")
     print("Please provide the hardware addresses for your system.")
     
-    -- Primary reactor configuration
-    print("\n--- PRIMARY REACTOR ---")
-    io.write("Enter TRANSPOSER address: ")
-    local transposerAddr = io.read()
-    
-    io.write("Enter POWER_BUTTON address: ")
-    local powerButtonAddr = io.read()
+    io.write("How many reactors do you want to configure? (1): ")
+    local n = tonumber(io.read()) or 1
 
     io.write("Enter POWER_REQUEST address (optional, press Enter to skip): ")
     local powerRequestAddr = io.read()
     if powerRequestAddr == "" then powerRequestAddr = nil end
 
-    -- Secondary reactor configuration
-    print("\n--- SECONDARY REACTOR (optional, press Enter to skip) ---")
-    io.write("Enter secondary TRANSPOSER address (optional): ")
-    local secondaryTransposerAddr = io.read()
-    if secondaryTransposerAddr == "" then secondaryTransposerAddr = nil end
-    
-    io.write("Enter secondary POWER_BUTTON address (optional): ")
-    local secondaryPowerButtonAddr = io.read()
-    if secondaryPowerButtonAddr == "" then secondaryPowerButtonAddr = nil end
+    local reactors = {}
+    for i = 1, n do
+        print(string.format("\n--- REACTOR %d ---", i))
+        io.write("Enter TRANSPOSER address: ")
+        local t = io.read()
+        io.write("Enter POWER_BUTTON address: ")
+        local p = io.read()
+        table.insert(reactors, {t = t, p = p})
+    end
 
-    -- Write primary transposer address
+    -- Write reactors list file (one reactor per line: <transposer> <powerbutton>)
+    local rf = io.open("reactors.txt", "w")
+    if rf then
+        for _, r in ipairs(reactors) do
+            rf:write((r.t or "") .. " " .. (r.p or "") .. "\n")
+        end
+        rf:close()
+    else
+        print("ERROR: Could not write reactors.txt")
+        return false
+    end
+
+    -- For backward compatibility, write primary transposer/power_button files from the first reactor
+    local first = reactors[1]
     local transposerFile = io.open("transposer_address.txt", "w")
     if transposerFile then
-        transposerFile:write(transposerAddr)
+        transposerFile:write(first.t or "")
         transposerFile:close()
     else
         print("ERROR: Could not write transposer_address.txt")
         return false
     end
-    
-    -- Write primary power button address
     local powerButtonFile = io.open("power_button_address.txt", "w")
     if powerButtonFile then
-        powerButtonFile:write(powerButtonAddr)
+        powerButtonFile:write(first.p or "")
         powerButtonFile:close()
     else
         print("ERROR: Could not write power_button_address.txt")
@@ -97,39 +103,14 @@ local function setupConfig()
         end
     end
 
-    -- Write secondary transposer address if provided
-    if secondaryTransposerAddr then
-        local secondaryTransposerFile = io.open("secondary_transposer_address.txt", "w")
-        if secondaryTransposerFile then
-            secondaryTransposerFile:write(secondaryTransposerAddr)
-            secondaryTransposerFile:close()
-        else
-            print("ERROR: Could not write secondary_transposer_address.txt")
-            return false
-        end
-    end
-
-    -- Write secondary power button address if provided
-    if secondaryPowerButtonAddr then
-        local secondaryPowerButtonFile = io.open("secondary_power_button_address.txt", "w")
-        if secondaryPowerButtonFile then
-            secondaryPowerButtonFile:write(secondaryPowerButtonAddr)
-            secondaryPowerButtonFile:close()
-        else
-            print("ERROR: Could not write secondary_power_button_address.txt")
-            return false
-        end
-    end
-    
     print("\nConfiguration saved.")
     return true
 end
 
--- Check if config already exists
-local transposerFile = io.open("transposer_address.txt", "r")
-if transposerFile then
-    transposerFile:close()
-    io.write("\nConfig files already exist. Reconfigure? (y/n): ")
+local reactorsFile = io.open("reactors.txt", "r")
+if reactorsFile then
+    reactorsFile:close()
+    io.write("\nConfig file 'reactors.txt' already exists. Reconfigure? (y/n): ")
     local response = io.read()
     if response:lower() == "y" then
         setupConfig()

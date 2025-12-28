@@ -23,25 +23,54 @@ local function readAddress(path)
 end
 
 -- Read primary power button address
-local powerButtonAddress = readAddress("power_button_address.txt")
-if not powerButtonAddress then
-  error("power_button_address.txt not found. Please run setup.lua first.")
+-- Attempt to read a reactors list first (reactors.txt)
+local function readReactorsList(path)
+  local f = io.open(path, "r")
+  if not f then return nil end
+  local list = {}
+  for line in f:lines() do
+    local cleaned = line:match("^%s*(.-)%s*$")
+    if cleaned ~= "" then
+      local taddr, paddr = cleaned:match('^(%S+)%s+(%S+)')
+      if paddr then
+        table.insert(list, paddr)
+      else
+        -- If only one token present, assume it's the power button
+        table.insert(list, cleaned)
+      end
+    end
+  end
+  f:close()
+  return #list > 0 and list or nil
 end
 
--- Read secondary power button address if it exists
-local secondaryPowerButtonAddress = readAddress("secondary_power_button_address.txt")
-
--- Shutdown primary reactor
-local reactor_chamber_signal = component.proxy(component.get(powerButtonAddress))
-for side = 0, 5 do
-  reactor_chamber_signal.setOutput(side, 0)
+local powerButtons = readReactorsList("reactors.txt")
+if not powerButtons then
+  -- Fallback to legacy files
+  local primary = readAddress("power_button_address.txt")
+  if not primary then
+    error("power_button_address.txt not found. Please run setup.lua first.")
+  end
+  powerButtons = {primary}
+  local secondary = readAddress("secondary_power_button_address.txt")
+  if secondary then table.insert(powerButtons, secondary) end
 end
 
--- Shutdown secondary reactor if configured
-if secondaryPowerButtonAddress then
-  local secondary_reactor_signal = component.proxy(component.get(secondaryPowerButtonAddress))
-  for side = 0, 5 do
-    secondary_reactor_signal.setOutput(side, 0)
+-- Shutdown every configured power button
+for i, addr in ipairs(powerButtons) do
+  local ok, proxyOrErr = pcall(component.get, addr)
+  if not ok or not proxyOrErr then
+    print(string.format("Warning: power button address '%s' not found (reactor %d). Skipping.", tostring(addr), i))
+  else
+    local success, proxy = pcall(component.proxy, proxyOrErr)
+    if success and proxy then
+      for side = 0, 5 do
+        proxy.setOutput(side, 0)
+      end
+      print(string.format("Shutdown signal sent to reactor %d (power button %s)", i, tostring(addr)))
+    else
+      print(string.format("Warning: could not proxy component %s for reactor %d", tostring(addr), i))
+    end
   end
 end
 
