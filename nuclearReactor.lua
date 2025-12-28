@@ -4,6 +4,26 @@ local component = require('component')
 local computer = require('computer')
 local sides = require('sides')
 
+
+-- ============== USER CONFIGURATION INPUTS ==============
+-- CHANGE THESE VALUES TO MATCH YOUR REACTOR SETUP --
+
+local coolant_name        = 'gregtech:gt.360k_Helium_Coolantcell'
+local fuel_name           = 'gregtech:gt.rodMOX4'
+local fuel_depleted_name  = 'gregtech:gt.depletedRodMOX4'
+
+local SIDES = {
+  INPUT                         = sides.south,
+  OUTPUT                        = sides.north,
+  NUCLEAR_REACTOR               = sides.top,
+  NUCLEAR_REACTOR_POWER_BUTTON  = sides.top,
+}
+
+local COOLANT_MINIMUM_DURABILITY_THRESHOLD = 5 -- Likely needs to be at least 20 for 1080k Coolant in The Core reactors
+
+-- ========================================================
+
+
 --- @alias What { name: string, isDamaged: fun(stack):boolean }
 
 --region SETUP
@@ -41,28 +61,18 @@ end
 -- Optional power request
 local powerRequestAddr = readAddress("power_request_address.txt")
 
-local SIDES = {
-  INPUT                         = sides.south,
-  OUTPUT                        = sides.north,
-  NUCLEAR_REACTOR               = sides.top,
-  NUCLEAR_REACTOR_POWER_BUTTON  = sides.top,
-}
 local ADDRESSES = {
   TRANSPOSER     = transposerAddr,
   POWER_BUTTON   = powerButtonAddr,
   POWER_REQUEST  = powerRequestAddr
 }
 
-local coolant_name        = 'gregtech:gt.360k_Helium_Coolantcell'
-local fuel_name           = 'gregtech:gt.rodMOX4'
-local fuel_depleted_name  = 'gregtech:gt.depletedRodMOX4'
-
 --- coolant cell
 --- @type What
 local C = {
   name      = coolant_name,
   isDamaged = function(stack)
-    return stack.maxDamage - 5 <= stack.damage
+    return stack.maxDamage - COOLANT_MINIMUM_DURABILITY_THRESHOLD <= stack.damage
   end
 }
 --- fuel rod
