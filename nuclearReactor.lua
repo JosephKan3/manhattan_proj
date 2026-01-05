@@ -9,8 +9,8 @@ local sides = require('sides')
 -- CHANGE THESE VALUES TO MATCH YOUR REACTOR SETUP --
 
 local coolant_name        = 'gregtech:gt.360k_Helium_Coolantcell'
-local fuel_name           = 'gregtech:gt.rodMOX4'
-local fuel_depleted_name  = 'gregtech:gt.depletedRodMOX4'
+local fuel_name           = 'gregtech:gt.rodHighDensityPlutonium4'
+local fuel_depleted_name  = 'gregtech:gt.depletedRodHighDensityPlutonium4'
 
 local SIDES = {
   INPUT                         = sides.south,
@@ -19,7 +19,7 @@ local SIDES = {
   NUCLEAR_REACTOR_POWER_BUTTON  = sides.top,
 }
 
-local COOLANT_MINIMUM_DURABILITY_THRESHOLD = 5 -- Likely needs to be at least 20 for 1080k Coolant in The Core reactors
+local COOLANT_MINIMUM_DURABILITY_THRESHOLD = 10 -- Likely needs to be at least 20 for 1080k Coolant in The Core reactors
 
 -- ========================================================
 
@@ -264,6 +264,7 @@ function reactor:ensure()
   -- local t2 = os.clock()
   -- print(string.format("[TIME] Time between stop() and discharge(): %.3f seconds", t2 - t1))
 
+  os.sleep(0.5) -- Let the reactor settle
   self:discharge()
   self:load()
 end
