@@ -264,7 +264,7 @@ function reactor:ensure()
   -- local t2 = os.clock()
   -- print(string.format("[TIME] Time between stop() and discharge(): %.3f seconds", t2 - t1))
 
-  os.sleep(0.5) -- Let the reactor settle
+  os.sleep(0.1) -- Let the reactor settle
   self:discharge()
   self:load()
 end
