@@ -135,9 +135,11 @@ function reactor:initializationCheck()
     print("ERROR: Inventory size mismatch!")
     return false
   end
+
+  local inventory_data = transposer.getAllStacks(SIDES.NUCLEAR_REACTOR)
   for slot = 1, self.inventorySize do
     local preset = LAYOUT[slot]
-    local stack = transposer.getStackInSlot(SIDES.NUCLEAR_REACTOR, slot)
+    local stack = inventory_data[slot]
     print("Slot " .. slot .. ": Expected=" .. (preset.name or "empty") .. ", Got=" .. (stack and stack.name or "empty"))
     if preset.name == '' and stack ~= nil then
       print("ERROR: Slot " .. slot .. " should be empty but contains " .. stack.name)
@@ -227,8 +229,9 @@ end
 
 --- @return boolean
 function reactor:hasDamaged()
+  local inventory_data = transposer.getAllStacks(SIDES.NUCLEAR_REACTOR)
   for slot = 1, self.inventorySize do
-    local stack = transposer.getStackInSlot(SIDES.NUCLEAR_REACTOR, slot)
+    local stack = inventory_data[slot]
     if stack and LAYOUT[slot].isDamaged(stack) then
       return true
     end
@@ -299,7 +302,7 @@ end
 function reactor:loop()
   self:wait_for_power_request()
   self:ensure()
-  computer.beep(50, 0.1)
+  -- computer.beep(50, 0.1)
   if not self.started then
     self:start()
   end
